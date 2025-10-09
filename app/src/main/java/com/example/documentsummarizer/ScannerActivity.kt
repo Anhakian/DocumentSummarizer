@@ -1,10 +1,10 @@
 package com.example.documentsummarizer
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,6 +18,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.example.documentsummarizer.databinding.ActivityScannerBinding
 import com.example.documentsummarizer.utils.ImageUtils
+import com.example.documentsummarizer.utils.Log
 import com.example.documentsummarizer.utils.OcrTextRecognizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,9 +57,19 @@ class ScannerActivity : AppCompatActivity() {
         binding.buttonCapture.setOnClickListener { captureAndOcr() }
         binding.buttonRetake.setOnClickListener { goPreview() }
         binding.buttonConfirm.setOnClickListener {
-            // For demo: accept and go back to preview (you could store lastText in a list here)
-            toast("Page confirmed (${lastText.length} chars)")
-            goPreview()
+            Log.d({ "User confirmed OCR text, returning to MainActivity" })
+            if (lastText.isBlank()) {
+                toast("No text detected.")
+                return@setOnClickListener
+            }
+            // Navigate back to MainActivity and deliver OCR text
+            val intent = Intent(this, MainActivity::class.java).apply {
+                putExtra("OCR_TEXT", lastText)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            startActivity(intent)
+            finish() // close scanner after sending
+
         }
 
         if (hasCameraPermission()) startCamera() else requestPerm.launch(Manifest.permission.CAMERA)
@@ -80,7 +91,7 @@ class ScannerActivity : AppCompatActivity() {
                     .build()
 
                 if (!cameraProvider.hasCamera(backSelector)) {
-                    Log.e("Anh", "No BACK camera available on this device/emulator.")
+                    Log.e({"No BACK camera available on this device/emulator."})
                     toast("No back camera available")
                     return@addListener
                 }
@@ -95,9 +106,9 @@ class ScannerActivity : AppCompatActivity() {
 
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, backSelector, preview, imageCapture)
-                Log.d("Anh", "Back camera bound successfully")
+                Log.d({ "Back camera bound successfully" })
             } catch (e: Exception) {
-                Log.e("Anh", "Camera provider setup/bind failed", e)
+                Log.e({ "Camera provider setup/bind failed" })
                 toast("Camera error: ${e.message}")
             }
         }, ContextCompat.getMainExecutor(this))
@@ -127,7 +138,7 @@ class ScannerActivity : AppCompatActivity() {
                         lastText = text
                         showReview(bmp, text)
                     } catch (t: Throwable) {
-                        Log.e("OCR", "Processing failed", t)
+                        Log.e( { "Processing failed" })
                         runCatching { image.close() }
                         toast("Capture Image failed: ${t.message}")
                         setState(UiState.PREVIEW)
@@ -136,7 +147,7 @@ class ScannerActivity : AppCompatActivity() {
             }
 
             override fun onError(exception: ImageCaptureException) {
-                Log.e("CameraX", "Capture error", exception)
+                Log.e( {"Capture error ${exception}" })
                 toast("Capture error: ${exception.message}")
                 setState(UiState.PREVIEW)
             }
