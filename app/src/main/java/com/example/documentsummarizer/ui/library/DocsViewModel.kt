@@ -28,12 +28,11 @@ class DocsViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun addFromOcr(ocrText: String) {
+    fun addFromOcr(ocrText: String, bullets: Int) {
         viewModelScope.launch {
-            _error.value = null
             _loading.value = true
             try {
-                val summary = summarizer.summarize(ocrText)
+                val summary = summarizer.summarize(ocrText, bullets)
                 val title = summary.lineSequence().firstOrNull()?.take(80) ?: "Untitled"
                 val item = DocumentItem(
                     id = System.currentTimeMillis().toString(),
@@ -43,7 +42,7 @@ class DocsViewModel(
                 )
                 _docs.value = listOf(item) + _docs.value
             } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to summarize."
+                _error.value = e.message
             } finally {
                 _loading.value = false
             }
