@@ -7,5 +7,7 @@
         android:entries="@array/summary_length_labels"
         android:entryValues="@array/summary_length_values"
         android:defaultValue="6"
+        app:icon="@drawable/baseline_summarize_24"
+        app:iconSpaceReserved="true"
         app:useSimpleSummaryProvider="true"/>
 </PreferenceScreen>
