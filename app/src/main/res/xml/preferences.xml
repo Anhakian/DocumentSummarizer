@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ListPreference
+        android:key="summary_bullets"
+        android:title="Summary length"
+        android:entries="@array/summary_length_labels"
+        android:entryValues="@array/summary_length_values"
+        android:defaultValue="6"
+        app:icon="@drawable/baseline_summarize_24"
+        app:iconSpaceReserved="true"
+        app:useSimpleSummaryProvider="true"/>
+</PreferenceScreen>

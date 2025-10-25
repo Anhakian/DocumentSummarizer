@@ -13,7 +13,7 @@ class SummarizerRepository(
     private val model: String = "gpt-4o-mini"
 ) {
 
-    suspend fun summarize(ocrText: String): String = withContext(Dispatchers.IO) {
+    suspend fun summarize(ocrText: String, bullets: Int): String = withContext(Dispatchers.IO) {
         Log.d({ "OpenAI called" })
         val apiKey = BuildConfig.OPENAI_API_KEY
         Log.d({ "OpenAI API Key (masked): ${if (apiKey.length > 8) apiKey.take(4) + "..." + apiKey.takeLast(4) else apiKey}" })
@@ -25,7 +25,7 @@ class SummarizerRepository(
             singleSummary(
                 """
                 You are a concise document summarizer. 
-                Summarize the following text into 5–8 bullet points, preserving key facts, numbers, and entities. 
+                Summarize the following text into $bullets bullet points, preserving key facts, numbers, and entities. 
                 If the text is noisy OCR, ignore garbled parts.
                 Return only the bullet points.
                 
@@ -38,7 +38,7 @@ class SummarizerRepository(
         // Reduce step
         singleSummary(
             """
-            Merge the following bullet-point summaries into a single, non-redundant summary (6–10 bullets max). 
+            Merge the following bullet-point summaries into a single, non-redundant summary (${bullets.coerceAtLeast(4)} bullets max). 
             Prefer clarity and factual accuracy. Include a 1-line title at the top.
 
             ${partials.joinToString("\n\n")}

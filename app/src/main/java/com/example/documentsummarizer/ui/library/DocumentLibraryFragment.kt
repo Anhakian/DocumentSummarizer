@@ -7,8 +7,9 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.example.documentsummarizer.R
-import com.example.documentsummarizer.ScannerActivity
+import com.example.documentsummarizer.ui.capture.ScannerActivity
 import com.example.documentsummarizer.databinding.FragmentDocumentLibraryBinding
 import com.example.documentsummarizer.utils.Log
 
@@ -43,10 +44,10 @@ class DocumentLibraryFragment : Fragment(R.layout.fragment_document_library) {
         // Receive OCR text (from ScannerActivity or CaptureFragment)
         parentFragmentManager.setFragmentResultListener("ocr_result", viewLifecycleOwner) { _, b ->
             val text = b.getString("text").orEmpty()
-            Log.d({ "Received OCR text: $text" })
             if (text.isNotBlank()) {
-                Log.d({ "Calling viewModel.addFromOcr" })
-                viewModel.addFromOcr(text)
+                val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val bullets = prefs.getString("summary_bullets", "6")!!.toInt()
+                viewModel.addFromOcr(text, bullets)
             }
         }
 

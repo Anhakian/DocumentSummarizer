@@ -1,12 +1,14 @@
-package com.example.documentsummarizer
+package com.example.documentsummarizer.ui.capture
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.widget.Toast
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -16,7 +18,10 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.example.documentsummarizer.MainActivity
+import com.example.documentsummarizer.R
 import com.example.documentsummarizer.databinding.ActivityScannerBinding
+import com.example.documentsummarizer.ui.settings.SettingsActivity
 import com.example.documentsummarizer.utils.ImageUtils
 import com.example.documentsummarizer.utils.Log
 import com.example.documentsummarizer.utils.OcrTextRecognizer
@@ -53,6 +58,15 @@ class ScannerActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        binding.toolbar.setNavigationOnClickListener {
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        }
+
         // Buttons
         binding.buttonCapture.setOnClickListener { captureAndOcr() }
         binding.buttonRetake.setOnClickListener { goPreview() }
@@ -76,12 +90,19 @@ class ScannerActivity : AppCompatActivity() {
         setState(UiState.PREVIEW)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraExecutor.shutdown()
+        scope.cancel()
+    }
+
+    // Helper functions
     private fun hasCameraPermission() =
         ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProviderFuture = ProcessCameraProvider.Companion.getInstance(this)
         cameraProviderFuture.addListener({
             try {
                 val cameraProvider = cameraProviderFuture.get()
@@ -125,8 +146,14 @@ class ScannerActivity : AppCompatActivity() {
                         val rotation = image.imageInfo.rotationDegrees
 
                         // 1) Build bitmap from ImageProxy safely
-                        val bmp0 = withContext(Dispatchers.IO) { ImageUtils.imageProxyToBitmap(image) }
-                        val bmp  = withContext(Dispatchers.Default) { ImageUtils.rotateBitmapIfNeeded(bmp0, rotation) }
+                        val bmp0 =
+                            withContext(Dispatchers.IO) { ImageUtils.imageProxyToBitmap(image) }
+                        val bmp  = withContext(Dispatchers.Default) {
+                            ImageUtils.rotateBitmapIfNeeded(
+                                bmp0,
+                                rotation
+                            )
+                        }
 
                         // 2) Run OCR from the bitmap
                         val text = withContext(Dispatchers.IO) { OcrTextRecognizer.process(bmp) }
@@ -147,7 +174,7 @@ class ScannerActivity : AppCompatActivity() {
             }
 
             override fun onError(exception: ImageCaptureException) {
-                Log.e( {"Capture error ${exception}" })
+                Log.e( {"Capture error $exception" })
                 toast("Capture error: ${exception.message}")
                 setState(UiState.PREVIEW)
             }
@@ -194,9 +221,17 @@ class ScannerActivity : AppCompatActivity() {
     private fun toast(msg: String) =
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 
-    override fun onDestroy() {
-        super.onDestroy()
-        cameraExecutor.shutdown()
-        scope.cancel()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_scanner, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.action_settings -> {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            Log.d({ "Navigating to SettingsActivity" })
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 }
