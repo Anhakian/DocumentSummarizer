@@ -60,6 +60,12 @@ class ScannerActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
+        binding.toolbar.setNavigationOnClickListener {
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        }
 
         // Buttons
         binding.buttonCapture.setOnClickListener { captureAndOcr() }
@@ -221,10 +227,6 @@ class ScannerActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.action_home -> {
-            startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
-            true
-        }
         R.id.action_settings -> {
             startActivity(Intent(this, SettingsActivity::class.java))
             Log.d({ "Navigating to SettingsActivity" })
