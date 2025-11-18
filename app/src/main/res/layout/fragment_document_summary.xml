@@ -47,21 +47,107 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Section label for the source OCR text -->
             <TextView
-                android:id="@+id/textView_source_text"
+                android:id="@+id/textView_source_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="?android:textColorSecondary"
-                android:lineSpacingExtra="4dp"
-                android:paddingBottom="12dp" />
+                android:text="Source"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:paddingBottom="4dp" />
 
-            <TextView
-                android:id="@+id/textView_summary_full"
+            <!-- Card around the source text to visually separate it -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:lineSpacingExtra="4dp" />
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
+                android:layout_marginBottom="8dp">
+
+                <!-- Use an inner horizontal layout with a narrow accent bar + text -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/textView_source_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="?android:textColorSecondary"
+                        android:lineSpacingExtra="4dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:paddingEnd="12dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Thin divider between sections -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Section label for the AI summary -->
+            <TextView
+                android:id="@+id/textView_summary_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Summary"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp" />
+
+            <!-- Card around the summary to give it prominence -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true"
+                android:layout_marginBottom="16dp">
+
+                <!-- Use an inner horizontal layout with a narrow accent bar + text -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="?attr/colorSecondary" />
+
+                    <TextView
+                        android:id="@+id/textView_summary_full"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:lineSpacingExtra="4dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:paddingEnd="12dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
 
