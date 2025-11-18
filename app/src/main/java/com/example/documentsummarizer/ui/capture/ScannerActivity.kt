@@ -18,9 +18,9 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import com.example.documentsummarizer.MainActivity
 import com.example.documentsummarizer.R
 import com.example.documentsummarizer.databinding.ActivityScannerBinding
+import com.example.documentsummarizer.ui.library.LibraryActivity
 import com.example.documentsummarizer.ui.settings.SettingsActivity
 import com.example.documentsummarizer.utils.ImageUtils
 import com.example.documentsummarizer.utils.Log
@@ -51,6 +51,7 @@ class ScannerActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) startCamera() else toast("Camera permission is required") }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityScannerBinding.inflate(layoutInflater)
@@ -62,7 +63,7 @@ class ScannerActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         binding.toolbar.setNavigationOnClickListener {
             startActivity(
-                Intent(this, MainActivity::class.java)
+                Intent(this, LibraryActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             )
         }
@@ -72,18 +73,39 @@ class ScannerActivity : AppCompatActivity() {
         binding.buttonRetake.setOnClickListener { goPreview() }
         binding.buttonConfirm.setOnClickListener {
             Log.d({ "User confirmed OCR text, returning to MainActivity" })
-            if (lastText.isBlank()) {
+            val bmp = lastBitmap
+            val text = lastText
+            if (bmp == null || text.isBlank()) {
                 toast("No text detected.")
                 return@setOnClickListener
             }
-            // Navigate back to MainActivity and deliver OCR text
-            val intent = Intent(this, MainActivity::class.java).apply {
-                putExtra("OCR_TEXT", lastText)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-            startActivity(intent)
-            finish() // close scanner after sending
 
+            // Return OCR text to the parent so the UI/fragment can show AI summary
+            binding.progressBarCapture.visibility = View.VISIBLE
+
+            scope.launch {
+                try {
+                    // Persist the bitmap file now and get a content URI string so other UIs
+                    // (summary fragment) can show the image without requiring a DB row yet.
+                    val imgUriStr = withContext(Dispatchers.IO) {
+                        ImageUtils.saveBitmapFile(this@ScannerActivity, bmp)
+                    }
+
+                    // Send OCR_TEXT and IMG_URI to the ScanSummaryActivity so it can show preview & allow save
+                    val intent = Intent(this@ScannerActivity, ScanSummaryActivity::class.java).apply {
+                        putExtra("OCR_TEXT", text)
+                        putExtra("IMG_URI", imgUriStr)
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    }
+                    startActivity(intent)
+                    finish()
+                } catch (t: Throwable) {
+                    Log.d { t.message.toString() }
+                    toast("Save failed: ${t.message}")
+                } finally {
+                    binding.progressBarCapture.visibility = View.GONE
+                }
+            }
         }
 
         if (hasCameraPermission()) startCamera() else requestPerm.launch(Manifest.permission.CAMERA)

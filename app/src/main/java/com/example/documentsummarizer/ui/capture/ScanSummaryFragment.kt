@@ -1,4 +1,4 @@
-package com.example.documentsummarizer.ui.library
+package com.example.documentsummarizer.ui.capture
 
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -13,16 +13,18 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import com.example.documentsummarizer.R
-import com.example.documentsummarizer.ui.capture.ScannerActivity
-import com.example.documentsummarizer.databinding.FragmentDocumentSummaryBinding
+import com.example.documentsummarizer.databinding.FragmentScanSummaryBinding
 import com.example.documentsummarizer.data.db.AppDatabase
 import com.example.documentsummarizer.data.repository.DocumentRepository
+import com.example.documentsummarizer.ui.library.DocsViewModel
+import com.example.documentsummarizer.ui.library.DocsViewModelFactory
+import com.example.documentsummarizer.ui.library.LibraryActivity
 import com.example.documentsummarizer.utils.Log
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
-    private var _binding: FragmentDocumentSummaryBinding? = null
+class ScanSummaryFragment : Fragment(R.layout.fragment_scan_summary) {
+    private var _binding: FragmentScanSummaryBinding? = null
     private val binding get() = _binding!!
     private var imgUri: String? = null
 
@@ -45,19 +47,12 @@ class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         Log.d({ "onViewCreated called" })
-        _binding = FragmentDocumentSummaryBinding.bind(view)
+        _binding = FragmentScanSummaryBinding.bind(view)
         super.onViewCreated(view, savedInstanceState)
 
-        // If the fragment was started with intent extras (via DocumentHostActivity), use them
+        // If the fragment was started with intent extras, use them (host activities set fragment.arguments = intent.extras)
         arguments?.let { args ->
-            val docId = when {
-                args.containsKey("docId") -> args.getLong("docId", -1L)
-                args.containsKey("DOC_ID") -> args.getLong("DOC_ID", -1L)
-                else -> -1L
-            }
-            if (docId != -1L) observedDocId = docId
-
-            // Also accept OCR preview forwarded via args (OCR_TEXT / IMG_URI)
+            // OCR preview
             val ocrText = args.getString("OCR_TEXT")
             val img = args.getString("IMG_URI")
             if (!ocrText.isNullOrBlank()) {
@@ -66,6 +61,13 @@ class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
                 val bullets = prefs.getString("summary_bullets", "6")!!.toInt()
                 viewModel.addFromOcr(ocrText, bullets)
             }
+            // If a DOC_ID was provided (host opened a saved doc), observe it instead
+            val docId = when {
+                args.containsKey("docId") -> args.getLong("docId", -1L)
+                args.containsKey("DOC_ID") -> args.getLong("DOC_ID", -1L)
+                else -> -1L
+            }
+            if (docId != -1L) observedDocId = docId
         }
 
         // Observe preview documents (the ViewModel keeps a list where the latest preview is first)
@@ -81,12 +83,10 @@ class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
                             // Clear UI when there's no preview
                             binding.textViewTitle.text = ""
                             binding.textViewSummaryFull.text = ""
-                            binding.textViewSourceText.text = ""
                             binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
                         } else {
                             binding.textViewTitle.text = preview.title
                             binding.textViewSummaryFull.text = preview.summary
-                            binding.textViewSourceText.text = preview.sourceText
 
                             // Prefer coverThumb bytes if present
                             val thumbBytes = preview.coverThumb
@@ -118,54 +118,75 @@ class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
             }
         }
 
-        // If fragment result with DOC_ID arrives, observe it
+        // Receive OCR text (from ScannerActivity or CaptureFragment)
+        parentFragmentManager.setFragmentResultListener("ocr_result", viewLifecycleOwner) { _, b ->
+            // Clear any observed saved-document so scanner preview is shown
+            observedDocId = null
+
+            val text = b.getString("text").orEmpty()
+            imgUri = b.getString("imgUri")
+            if (text.isNotBlank()) {
+                val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val bullets = prefs.getString("summary_bullets", "6")!!.toInt()
+                viewModel.addFromOcr(text, bullets)
+            }
+        }
+
+        // Receive DOC_ID from MainActivity (when opening an existing saved document)
         parentFragmentManager.setFragmentResultListener("doc_id_result", viewLifecycleOwner) { _, b ->
             val id = b.getLong("docId", -1L)
             if (id != -1L) {
                 observedDocId = id
+                // Observe saved document with images and bind to UI
                 viewLifecycleOwner.lifecycleScope.launch {
                     repo.observeWithImages(id).collectLatest { withImages ->
-                        bindSavedDocument(withImages?.doc, withImages?.images?.firstOrNull())
+                        val doc = withImages?.doc
+                        if (doc == null) {
+                            // Document missing: clear UI
+                            binding.textViewTitle.text = ""
+                            binding.textViewSummaryFull.text = ""
+                            binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
+                        } else {
+                            binding.textViewTitle.text = doc.title
+                            binding.textViewSummaryFull.text = doc.summaryText
+
+                            // Prefer the thumbnail from images if present
+                            val imgEntity = withImages.images.firstOrNull()
+                            val thumb = imgEntity?.thumbnail
+                            if (thumb != null && thumb.isNotEmpty()) {
+                                val bmp = BitmapFactory.decodeByteArray(thumb, 0, thumb.size)
+                                binding.imageViewThumb.setImageBitmap(bmp)
+                            } else if (!imgEntity?.imageUri.isNullOrBlank()) {
+                                try {
+                                    binding.imageViewThumb.setImageURI(Uri.parse(imgEntity?.imageUri))
+                                } catch (_: Exception) {
+                                    binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
+                                }
+                            } else {
+                                binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // If we have an observedDocId (from initial args), start observing it immediately
-        observedDocId?.let { id ->
-            viewLifecycleOwner.lifecycleScope.launch {
-                repo.observeWithImages(id).collectLatest { withImages ->
-                    bindSavedDocument(withImages?.doc, withImages?.images?.firstOrNull())
-                }
-            }
-        }
-    }
-
-    private fun bindSavedDocument(doc: com.example.documentsummarizer.data.db.DocumentEntity?, imgEntity: com.example.documentsummarizer.data.db.DocumentImageEntity?) {
-        if (doc == null) {
-            binding.textViewTitle.text = ""
-            binding.textViewSummaryFull.text = ""
-            binding.textViewSourceText.text = ""
-            binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
-            return
+        binding.buttonRetake.setOnClickListener {
+            startActivity(Intent(requireContext(), ScannerActivity::class.java))
         }
 
-        binding.textViewTitle.text = doc.title
-        binding.textViewSummaryFull.text = doc.summaryText
-        binding.textViewSourceText.text = doc.sourceText
-
-        val thumb = imgEntity?.thumbnail
-        if (thumb != null && thumb.isNotEmpty()) {
-            val bmp = BitmapFactory.decodeByteArray(thumb, 0, thumb.size)
-            binding.imageViewThumb.setImageBitmap(bmp)
-        } else if (!imgEntity?.imageUri.isNullOrBlank()) {
-            try {
-                binding.imageViewThumb.setImageURI(Uri.parse(imgEntity?.imageUri))
-            } catch (_: Exception) {
-                binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
+        binding.buttonConfirm.setOnClickListener {
+            viewModel.confirmSave(
+                context = requireContext().applicationContext,
+                imageUri = imgUri
+            ) { savedId ->
+                Log.d({ "Document saved id=$savedId" })
+                startActivity(
+                    Intent(requireContext(), LibraryActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    }
+                )
             }
-        } else {
-            binding.imageViewThumb.setImageResource(android.R.color.darker_gray)
         }
     }
 

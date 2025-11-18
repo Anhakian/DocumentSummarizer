@@ -1,12 +1,19 @@
 package com.example.documentsummarizer.utils
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
+import android.net.Uri
 import androidx.camera.core.ImageProxy
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 object ImageUtils {
 
@@ -74,4 +81,27 @@ object ImageUtils {
         val m = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
         return Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
     }
+
+    suspend fun saveBitmapFile(context: android.content.Context, bmp: android.graphics.Bitmap): String =
+        withContext(Dispatchers.IO) {
+            saveBitmapToAppStorage(context, bmp).toString()
+        }
+
+    fun saveBitmapToAppStorage(context: Context, bmp: Bitmap): Uri {
+        val file = File(context.filesDir, "scan_${System.currentTimeMillis()}.jpg")
+        FileOutputStream(file).use { out -> bmp.compress(Bitmap.CompressFormat.JPEG, 90, out) }
+        // Use the fixed authority declared in AndroidManifest.xml to avoid mismatches
+        val authority = "com.example.documentsummarizer.fileprovider"
+        return FileProvider.getUriForFile(context, authority, file)
+    }
+
+    fun makeThumbnail(src: Bitmap, w: Int): Bitmap {
+        val r = w.toFloat() / src.width
+        val h = (src.height * r).coerceAtLeast(1f).toInt()
+        return Bitmap.createScaledBitmap(src, w, h, true)
+    }
+
+    fun jpegBytes(bmp: Bitmap, q: Int): ByteArray =
+        ByteArrayOutputStream().use { baos -> bmp.compress(Bitmap.CompressFormat.JPEG, q, baos); baos.toByteArray() }
+
 }

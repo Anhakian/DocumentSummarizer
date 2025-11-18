@@ -24,6 +24,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DocumentSummarizer">
         <activity
+            android:name=".ui.library.LibraryActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.documentsummarizer.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false" />
         <activity
@@ -37,8 +51,16 @@
         </activity>
         <activity
             android:name=".MainActivity"
-            android:exported="false">
-        </activity>
+            android:exported="false" />
+
+        <!-- Host activities for fragments -->
+        <activity
+            android:name=".ui.capture.ScanSummaryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.library.DocumentHostActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
