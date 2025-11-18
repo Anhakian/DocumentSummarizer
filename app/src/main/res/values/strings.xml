@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">DocumentSummarizer</string>
     <!-- TODO: Remove or change this placeholder text -->
+    <string name="blank_fragment">Currently no documents</string>
+
+    <!-- Accessibility/content descriptions for document list item -->
+    <string name="content_desc_document_thumbnail">Document thumbnail</string>
+    <string name="content_desc_remove_document">Remove document</string>
+    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
