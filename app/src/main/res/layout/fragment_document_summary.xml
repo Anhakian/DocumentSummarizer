@@ -38,6 +38,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="112dp"
+        android:layout_marginBottom="60dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
@@ -159,5 +160,40 @@
         android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+
+    <!-- Bottom edit bar with Edit + Export -->
+    <LinearLayout
+        android:id="@+id/edit_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurface">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_edit"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/baseline_edit_24"
+            app:iconSize="24dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_export_pdf"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/baseline_save_alt_24"
+            app:iconSize="24dp" />
+
+    </LinearLayout>
 
 </FrameLayout>
