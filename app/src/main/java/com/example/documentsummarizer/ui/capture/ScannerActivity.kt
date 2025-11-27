@@ -80,6 +80,11 @@ class ScannerActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (text.length < 500) {
+                toast("Detected text is too short to summarize.")
+                return@setOnClickListener
+            }
+
             // Return OCR text to the parent so the UI/fragment can show AI summary
             binding.progressBarCapture.visibility = View.VISIBLE
 
