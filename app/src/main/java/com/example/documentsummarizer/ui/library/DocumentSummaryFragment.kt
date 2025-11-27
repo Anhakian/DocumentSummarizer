@@ -1,10 +1,19 @@
 package com.example.documentsummarizer.ui.library
 
+import android.content.ContentValues
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.View
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -13,11 +22,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import com.example.documentsummarizer.R
-import com.example.documentsummarizer.ui.capture.ScannerActivity
-import com.example.documentsummarizer.databinding.FragmentDocumentSummaryBinding
 import com.example.documentsummarizer.data.db.AppDatabase
 import com.example.documentsummarizer.data.repository.DocumentRepository
+import com.example.documentsummarizer.databinding.FragmentDocumentSummaryBinding
 import com.example.documentsummarizer.utils.Log
+import com.example.documentsummarizer.utils.PdfExporter
+import com.example.documentsummarizer.utils.TextExporter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -47,6 +57,46 @@ class DocumentSummaryFragment : Fragment(R.layout.fragment_document_summary) {
         Log.d({ "onViewCreated called" })
         _binding = FragmentDocumentSummaryBinding.bind(view)
         super.onViewCreated(view, savedInstanceState)
+
+        // Wire the Export button in the bottom edit bar
+        binding.buttonExportPdf.setOnClickListener {
+            val cleanTitle = binding.textViewTitle.text
+                .toString()
+                .replace("\n", " ")
+                .trim()
+            val config = PdfExporter.PdfConfig(
+                title = cleanTitle,
+                body = binding.textViewSummaryFull.text.toString()
+            )
+
+            val uri = PdfExporter.export(requireContext(), config)
+
+            if (uri != null) {
+                Toast.makeText(requireContext(), "PDF saved!", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(requireContext(), "Failed to save PDF", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        binding.buttonExportText.setOnClickListener {
+            val config = TextExporter.TextConfig(
+                title = binding.textViewTitle.text.toString(),
+                body = binding.textViewSummaryFull.text.toString()
+            )
+
+            val uri = TextExporter.export(requireContext(), config)
+
+            if (uri != null) {
+                Toast.makeText(requireContext(), "TXT saved!", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(requireContext(), "Failed to save TXT", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        // TODO: Implement Edit functionality
+        binding.buttonEdit.setOnClickListener {
+            Toast.makeText(requireContext(), "Edit not implemented", Toast.LENGTH_SHORT).show()
+        }
 
         // If the fragment was started with intent extras (via DocumentHostActivity), use them
         arguments?.let { args ->
