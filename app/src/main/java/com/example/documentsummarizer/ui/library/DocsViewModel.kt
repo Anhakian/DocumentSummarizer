@@ -41,13 +41,13 @@ class DocsViewModel(
         viewModelScope.launch {
             _loading.value = true
             try {
-                val summary = summarizer.summarize(ocrText, bullets)
-                val title = summary.lineSequence().firstOrNull()?.take(80) ?: "Untitled"
+                val rawSummary = summarizer.summarize(ocrText, bullets)
+                val (title, cleanSummary) = extractTitleAndSummary(rawSummary)
                 val item = DocumentItem(
                     id = System.currentTimeMillis().toString(),
                     title = title,
                     sourceText = ocrText,
-                    summary = summary
+                    summary = cleanSummary
                 )
                 _docs.value = listOf(item) + _docs.value
             } catch (e: Exception) {
@@ -69,9 +69,11 @@ class DocsViewModel(
                 }
 
                 // 2) Summarize using your existing repo
-                val summary = withContext(Dispatchers.IO) {
+                val raw = withContext(Dispatchers.IO) {
                     summarizer.summarize(doc.sourceText, bullets)
                 }
+
+                val (_, summary) = extractTitleAndSummary(raw)
 
                 // 3) Write back to Room as READY
                 withContext(Dispatchers.IO) { docsRepo.setSummaryReady(docId, summary) }
@@ -133,5 +135,21 @@ class DocsViewModel(
                 _loading.value = false
             }
         }
+    }
+
+    private fun extractTitleAndSummary(raw: String): Pair<String, String> {
+        val lines = raw.lineSequence()
+            .map { it.trim().replace(Regex("^#{1,6}\\s*"), "") } // remove ###, ##, # headers
+            .filter { it.isNotBlank() }
+            .toList()
+
+        if (lines.isEmpty()) {
+            return "Untitled" to ""
+        }
+
+        val title = lines.first().take(80)
+        val summaryBody = lines.drop(1).joinToString("\n")
+
+        return title to summaryBody
     }
 }

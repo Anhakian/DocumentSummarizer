@@ -24,8 +24,10 @@
         <TextView
             android:id="@+id/textView_title"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:textAlignment="center"
             android:textStyle="bold"
             android:textSize="18sp"
             android:maxLines="2"
@@ -38,6 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="112dp"
+        android:layout_marginBottom="60dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
@@ -47,21 +50,107 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Section label for the source OCR text -->
             <TextView
-                android:id="@+id/textView_source_text"
+                android:id="@+id/textView_source_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="?android:textColorSecondary"
-                android:lineSpacingExtra="4dp"
-                android:paddingBottom="12dp" />
+                android:text="Source"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:textSize="12sp"
+                android:paddingTop="6dp"
+                android:paddingBottom="4dp" />
 
-            <TextView
-                android:id="@+id/textView_summary_full"
+            <!-- Card around the source text to visually separate it -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:lineSpacingExtra="4dp" />
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
+                android:layout_marginBottom="8dp">
+
+                <!-- Use an inner horizontal layout with a narrow accent bar + text -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/textView_source_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="?android:textColorSecondary"
+                        android:lineSpacingExtra="4dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:paddingEnd="12dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Thin divider between sections -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Section label for the AI summary -->
+            <TextView
+                android:id="@+id/textView_summary_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Summary"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp" />
+
+            <!-- Card around the summary to give it prominence -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true"
+                android:layout_marginBottom="16dp">
+
+                <!-- Use an inner horizontal layout with a narrow accent bar + text -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="match_parent"
+                        android:background="?attr/colorSecondary" />
+
+                    <TextView
+                        android:id="@+id/textView_summary_full"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:lineSpacingExtra="4dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp"
+                        android:paddingEnd="12dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
 
@@ -73,5 +162,58 @@
         android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+
+    <!-- Bottom edit bar with Edit + Export -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/edit_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurface">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_edit"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/baseline_edit_24"
+            app:iconSize="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/button_export_pdf"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_export_pdf"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/baseline_picture_as_pdf_24"
+            app:iconSize="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/button_export_text"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/button_edit"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_export_text"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/baseline_save_alt_24"
+            app:iconSize="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/button_export_pdf"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>
